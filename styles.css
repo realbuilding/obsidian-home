@@ -255,3 +255,7 @@
 .is-mobile .oh-root .oh-fab {
 	bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
+
+body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
+	visibility: hidden;
+}

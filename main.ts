@@ -4,6 +4,9 @@ import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
 
 const REFRESH_DEBOUNCE_MS = 800;
+// Hides the restored note while the app boots, so the startup home view
+// replaces it without first flashing the previous page.
+const BOOTING_CLASS = "oh-booting";
 
 export default class ObsidianHomePlugin extends Plugin {
 	settings: ObsidianHomeSettings = DEFAULT_SETTINGS;
@@ -16,9 +19,17 @@ export default class ObsidianHomePlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_HOME, (leaf) => new ObsidianHomeView(leaf, this));
 
-		this.app.workspace.onLayoutReady(() => {
+		const openOnStartup = Platform.isMobile && this.settings.openOnMobileStartup;
+		if (openOnStartup) document.body.addClass(BOOTING_CLASS);
+
+		this.app.workspace.onLayoutReady(async () => {
 			this.convertEmptyLeaves();
-			if (Platform.isMobile && this.settings.openOnMobileStartup) void this.openHome();
+			if (!openOnStartup) return;
+			try {
+				await this.openHome();
+			} finally {
+				document.body.removeClass(BOOTING_CLASS);
+			}
 		});
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.convertEmptyLeaves()));
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.convertEmptyLeaves()));
@@ -30,6 +41,7 @@ export default class ObsidianHomePlugin extends Plugin {
 	}
 
 	onunload() {
+		document.body.removeClass(BOOTING_CLASS);
 		if (this.refreshTimer !== null) {
 			window.clearTimeout(this.refreshTimer);
 			this.refreshTimer = null;
@@ -64,8 +76,9 @@ export default class ObsidianHomePlugin extends Plugin {
 		}, REFRESH_DEBOUNCE_MS);
 	}
 
-	// Reveal an existing home tab if one was restored, otherwise open a new one,
-	// so repeated launches don't pile up home tabs.
+	// Reveal an existing home tab if one was restored, otherwise reuse the active
+	// tab (the previous note stays in its back history) instead of opening a new
+	// one, so repeated launches don't pile up tabs and the restored note stops loading.
 	private async openHome() {
 		const { workspace } = this.app;
 		const existing = workspace.getLeavesOfType(VIEW_TYPE_HOME)[0];
@@ -73,7 +86,7 @@ export default class ObsidianHomePlugin extends Plugin {
 			workspace.setActiveLeaf(existing, { focus: true });
 			return;
 		}
-		const leaf = workspace.getLeaf("tab");
+		const leaf = workspace.getLeaf(false);
 		await leaf.setViewState({ type: VIEW_TYPE_HOME, state: {} });
 		workspace.setActiveLeaf(leaf, { focus: true });
 	}
