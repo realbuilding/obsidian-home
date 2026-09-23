@@ -5,6 +5,7 @@ export interface ObsidianHomeSettings {
 	limit: number;
 	previewLines: number;
 	pinnedPaths: string[];
+	openOnMobileStartup: boolean;
 }
 
 export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	limit: 20,
 	previewLines: 2,
 	pinnedPaths: [],
+	openOnMobileStartup: true,
 };
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";

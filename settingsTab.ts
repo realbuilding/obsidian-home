@@ -45,7 +45,7 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("排序方式")
-			.setDesc("首页“最近文件”的默认排序依据，也可在首页顶部直接切换")
+			.setDesc("首页“最近文件”的默认排序依据，也可在首页“最近文件”右侧直接切换")
 			.addDropdown((drop) =>
 				drop
 					.addOption("ctime", "创建时间")
@@ -56,6 +56,16 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						this.plugin.refreshAllHomeViews();
 					})
+			);
+
+		new Setting(containerEl)
+			.setName("移动端启动时打开首页")
+			.setDesc("在手机/平板上启动 Obsidian 后自动切换到 ObsidianHome")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.openOnMobileStartup).onChange(async (value) => {
+					this.plugin.settings.openOnMobileStartup = value;
+					await this.plugin.saveSettings();
+				})
 			);
 
 		new Setting(containerEl)

@@ -50,7 +50,9 @@ export class ObsidianHomeView extends ItemView {
 		}
 
 		const recentSection = scroll.createDiv({ cls: "oh-section" });
-		recentSection.createDiv({ cls: "oh-section-label", text: "最近文件" });
+		const recentLabel = recentSection.createDiv({ cls: "oh-section-label oh-section-label-row" });
+		recentLabel.createSpan({ text: "最近文件" });
+		this.renderSortToggle(recentLabel);
 		const recentFiles = this.getRecentFiles(pinnedFiles);
 
 		if (recentFiles.length === 0) {
@@ -68,26 +70,20 @@ export class ObsidianHomeView extends ItemView {
 	private renderHeader(container: HTMLElement) {
 		const header = container.createDiv({ cls: "oh-header" });
 		header.createDiv({ cls: "oh-title", text: "ObsidianHome" });
+	}
 
-		const sortGroup = header.createDiv({ cls: "oh-sort-group" });
-		const ctimeBtn = sortGroup.createEl("button", { cls: "oh-sort-btn", text: "创建时间" });
-		const mtimeBtn = sortGroup.createEl("button", { cls: "oh-sort-btn", text: "修改时间" });
-
-		const syncActive = () => {
-			ctimeBtn.toggleClass("is-active", this.plugin.settings.sortBy === "ctime");
-			mtimeBtn.toggleClass("is-active", this.plugin.settings.sortBy === "mtime");
-		};
-		syncActive();
-
-		ctimeBtn.addEventListener("click", async () => {
-			if (this.plugin.settings.sortBy === "ctime") return;
-			this.plugin.settings.sortBy = "ctime";
-			await this.plugin.saveSettings();
-			this.plugin.refreshAllHomeViews();
+	// Lightweight single-button toggle: shows the current sort key, click flips it.
+	private renderSortToggle(parent: HTMLElement) {
+		const sortBy = this.plugin.settings.sortBy;
+		const btn = parent.createEl("button", {
+			cls: "oh-sort-toggle",
+			attr: { "aria-label": "切换排序方式" },
 		});
-		mtimeBtn.addEventListener("click", async () => {
-			if (this.plugin.settings.sortBy === "mtime") return;
-			this.plugin.settings.sortBy = "mtime";
+		setIcon(btn.createSpan({ cls: "oh-sort-toggle-icon" }), "arrow-up-down");
+		btn.createSpan({ text: sortBy === "ctime" ? "创建时间" : "修改时间" });
+
+		btn.addEventListener("click", async () => {
+			this.plugin.settings.sortBy = sortBy === "ctime" ? "mtime" : "ctime";
 			await this.plugin.saveSettings();
 			this.plugin.refreshAllHomeViews();
 		});

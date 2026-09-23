@@ -1,6 +1,6 @@
 {
   "name": "obsidian-home",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "用卡片式主页完全替换 Obsidian 新标签页：置顶笔记、最近文件、正文预览与悬浮新建按钮",
   "main": "main.js",
   "scripts": {

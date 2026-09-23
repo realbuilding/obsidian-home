@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Platform, Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, EMPTY_VIEW_TYPE, ObsidianHomeSettings, VIEW_TYPE_HOME } from "./types";
 import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
@@ -16,7 +16,10 @@ export default class ObsidianHomePlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_HOME, (leaf) => new ObsidianHomeView(leaf, this));
 
-		this.app.workspace.onLayoutReady(() => this.convertEmptyLeaves());
+		this.app.workspace.onLayoutReady(() => {
+			this.convertEmptyLeaves();
+			if (Platform.isMobile && this.settings.openOnMobileStartup) void this.openHome();
+		});
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.convertEmptyLeaves()));
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.convertEmptyLeaves()));
 
@@ -59,6 +62,20 @@ export default class ObsidianHomePlugin extends Plugin {
 			this.refreshTimer = null;
 			this.refreshAllHomeViews();
 		}, REFRESH_DEBOUNCE_MS);
+	}
+
+	// Reveal an existing home tab if one was restored, otherwise open a new one,
+	// so repeated launches don't pile up home tabs.
+	private async openHome() {
+		const { workspace } = this.app;
+		const existing = workspace.getLeavesOfType(VIEW_TYPE_HOME)[0];
+		if (existing) {
+			workspace.setActiveLeaf(existing, { focus: true });
+			return;
+		}
+		const leaf = workspace.getLeaf("tab");
+		await leaf.setViewState({ type: VIEW_TYPE_HOME, state: {} });
+		workspace.setActiveLeaf(leaf, { focus: true });
 	}
 
 	// Convert Obsidian's built-in "empty" (new tab) leaves into our own view type,
