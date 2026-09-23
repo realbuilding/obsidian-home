@@ -1,4 +1,4 @@
-import { Notice, Platform, Plugin } from "obsidian";
+import { Platform, Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, EMPTY_VIEW_TYPE, ObsidianHomeSettings, VIEW_TYPE_HOME } from "./types";
 import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
@@ -14,9 +14,6 @@ export default class ObsidianHomePlugin extends Plugin {
 	private refreshTimer: number | null = null;
 
 	async onload() {
-		// TEMP startup diagnostics: performance.now() is ms since the app page started loading.
-		const tOnload = performance.now();
-		const layoutReadyAtOnload = this.app.workspace.layoutReady;
 		await this.loadSettings();
 		this.addSettingTab(new ObsidianHomeSettingTab(this.app, this));
 
@@ -26,7 +23,6 @@ export default class ObsidianHomePlugin extends Plugin {
 		if (openOnStartup) document.body.addClass(BOOTING_CLASS);
 
 		this.app.workspace.onLayoutReady(async () => {
-			const tLayout = performance.now();
 			this.convertEmptyLeaves();
 			if (!openOnStartup) return;
 			try {
@@ -34,22 +30,6 @@ export default class ObsidianHomePlugin extends Plugin {
 			} finally {
 				document.body.removeClass(BOOTING_CLASS);
 			}
-			const tHome = performance.now();
-			window.requestAnimationFrame(() => {
-				const tPaint = performance.now();
-				const fmt = (ms: number) => `${(ms / 1000).toFixed(2)}s`;
-				const lines = [
-					"ObsidianHome 启动诊断",
-					`① 插件开始运行：${fmt(tOnload)}`,
-					`② 布局就绪：${fmt(tLayout)}`,
-					`③ 主页打开：${fmt(tHome)}`,
-					`④ 主页绘制：${fmt(tPaint)}`,
-					`插件运行时布局已就绪：${layoutReadyAtOnload ? "是" : "否"}`,
-					`笔记数量：${this.app.vault.getMarkdownFiles().length}`,
-				];
-				console.log(lines.join("\n"));
-				new Notice(lines.join("\n"), 0);
-			});
 		});
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.convertEmptyLeaves()));
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.convertEmptyLeaves()));
@@ -58,6 +38,8 @@ export default class ObsidianHomePlugin extends Plugin {
 		this.registerEvent(this.app.vault.on("modify", () => this.scheduleRefresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this.scheduleRefresh()));
 		this.registerEvent(this.app.vault.on("rename", () => this.scheduleRefresh()));
+		// Frontmatter dates may only become available once the metadata cache resolves.
+		this.registerEvent(this.app.metadataCache.on("resolved", () => this.scheduleRefresh()));
 	}
 
 	onunload() {

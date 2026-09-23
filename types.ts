@@ -6,6 +6,9 @@ export interface ObsidianHomeSettings {
 	previewLines: number;
 	pinnedPaths: string[];
 	openOnMobileStartup: boolean;
+	// Frontmatter properties that override file ctime/mtime; empty means use file stat.
+	createdProperty: string;
+	updatedProperty: string;
 }
 
 export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
@@ -14,6 +17,8 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	previewLines: 2,
 	pinnedPaths: [],
 	openOnMobileStartup: true,
+	createdProperty: "created",
+	updatedProperty: "updated",
 };
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";

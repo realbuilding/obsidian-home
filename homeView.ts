@@ -1,7 +1,7 @@
 import { ItemView, Menu, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type ObsidianHomePlugin from "./main";
 import { VIEW_TYPE_HOME } from "./types";
-import { formatTime, loadPreview } from "./previewUtils";
+import { formatTime, loadPreview, parseDateProperty } from "./previewUtils";
 
 export class ObsidianHomeView extends ItemView {
 	private plugin: ObsidianHomePlugin;
@@ -105,8 +105,7 @@ export class ObsidianHomeView extends ItemView {
 
 		const previewEl = card.createDiv({ cls: "oh-card-preview" });
 
-		const sortKey = this.plugin.settings.sortBy;
-		const ts = sortKey === "ctime" ? file.stat.ctime : file.stat.mtime;
+		const ts = this.getFileTime(file);
 		const folder = file.parent && file.parent.path !== "/" ? file.parent.path : "";
 		card.createDiv({ cls: "oh-card-meta", text: folder ? `${formatTime(ts)} · ${folder}` : formatTime(ts) });
 
@@ -161,12 +160,26 @@ export class ObsidianHomeView extends ItemView {
 
 	private getRecentFiles(exclude: TFile[]): TFile[] {
 		const excluded = new Set(exclude.map((f) => f.path));
-		const sortKey = this.plugin.settings.sortBy;
 		return this.plugin.app.vault
 			.getMarkdownFiles()
 			.filter((f) => !excluded.has(f.path))
-			.sort((a, b) => b.stat[sortKey] - a.stat[sortKey])
-			.slice(0, this.plugin.settings.limit);
+			.map((file) => ({ file, time: this.getFileTime(file) }))
+			.sort((a, b) => b.time - a.time)
+			.slice(0, this.plugin.settings.limit)
+			.map((entry) => entry.file);
+	}
+
+	// Prefer the configured frontmatter date (synced files often get a reset
+	// ctime/mtime on mobile), falling back to the file's own stat.
+	private getFileTime(file: TFile): number {
+		const { sortBy, createdProperty, updatedProperty } = this.plugin.settings;
+		const property = sortBy === "ctime" ? createdProperty : updatedProperty;
+		if (property) {
+			const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+			const parsed = parseDateProperty(frontmatter?.[property]);
+			if (parsed !== null) return parsed;
+		}
+		return file.stat[sortBy];
 	}
 
 	private async togglePin(file: TFile) {

@@ -1,4 +1,6 @@
-import { TFile, Vault } from "obsidian";
+import { TFile, Vault, moment } from "obsidian";
+
+const DATE_FORMATS = [moment.ISO_8601, "YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY/MM/DD HH:mm", "YYYY/MM/DD"];
 
 export async function loadPreview(vault: Vault, file: TFile, lines: number): Promise<string> {
 	if (lines <= 0) return "";
@@ -41,6 +43,13 @@ export function stripMarkdown(line: string): string {
 }
 
 export function formatTime(ts: number): string {
-	// @ts-ignore moment is bundled globally by Obsidian on desktop and mobile
-	return window.moment(ts).format("YYYY-MM-DD HH:mm");
+	return moment(ts).format("YYYY-MM-DD HH:mm");
+}
+
+// Parse a frontmatter date value; strict formats avoid Safari's (mobile WebView)
+// inconsistent Date.parse handling of non-ISO strings.
+export function parseDateProperty(value: unknown): number | null {
+	if (typeof value !== "string") return null;
+	const parsed = moment(value.trim(), DATE_FORMATS, true);
+	return parsed.isValid() ? parsed.valueOf() : null;
 }

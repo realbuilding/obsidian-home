@@ -58,6 +58,9 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 					})
 			);
 
+		this.addPropertySetting(containerEl, "创建时间属性", "按创建时间排序时优先读取的笔记属性，留空则使用文件自身的创建时间", "createdProperty");
+		this.addPropertySetting(containerEl, "修改时间属性", "按修改时间排序时优先读取的笔记属性，留空则使用文件自身的修改时间", "updatedProperty");
+
 		new Setting(containerEl)
 			.setName("移动端启动时打开首页")
 			.setDesc("在手机/平板上启动 Obsidian 后自动切换到 ObsidianHome")
@@ -130,5 +133,18 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 					})
 			);
 		}
+	}
+
+	private addPropertySetting(containerEl: HTMLElement, name: string, desc: string, key: "createdProperty" | "updatedProperty") {
+		new Setting(containerEl)
+			.setName(name)
+			.setDesc(desc)
+			.addText((text) =>
+				text.setValue(this.plugin.settings[key]).onChange(async (value) => {
+					this.plugin.settings[key] = value.trim();
+					await this.plugin.saveSettings();
+					this.plugin.refreshAllHomeViews();
+				})
+			);
 	}
 }
