@@ -1,34 +1,44 @@
-import { AbstractInputSuggest, App, PluginSettingTab, Setting, TFile } from "obsidian";
+import { AbstractInputSuggest, App, PluginSettingTab, Setting, TAbstractFile, TFolder } from "obsidian";
 import type ObsidianHomePlugin from "./main";
 import { SortKey } from "./types";
 
-class FileSuggest extends AbstractInputSuggest<TFile> {
-	private onChoose: (file: TFile) => void;
+class PathSuggest<T extends TAbstractFile> extends AbstractInputSuggest<T> {
+	private getItems: () => T[];
+	private onChoose: (item: T) => void;
 	private inputEl: HTMLInputElement;
 
-	constructor(app: App, inputEl: HTMLInputElement, onChoose: (file: TFile) => void) {
+	constructor(app: App, inputEl: HTMLInputElement, getItems: () => T[], onChoose: (item: T) => void) {
 		super(app, inputEl);
 		this.inputEl = inputEl;
+		this.getItems = getItems;
 		this.onChoose = onChoose;
 	}
 
-	protected getSuggestions(query: string): TFile[] {
+	protected getSuggestions(query: string): T[] {
 		const q = query.toLowerCase();
-		return this.app.vault
-			.getMarkdownFiles()
+		return this.getItems()
 			.filter((f) => f.path.toLowerCase().includes(q))
 			.slice(0, 50);
 	}
 
-	renderSuggestion(file: TFile, el: HTMLElement): void {
-		el.setText(file.path);
+	renderSuggestion(item: T, el: HTMLElement): void {
+		el.setText(item.path);
 	}
 
-	selectSuggestion(file: TFile): void {
+	selectSuggestion(item: T): void {
 		this.inputEl.value = "";
 		this.close();
-		this.onChoose(file);
+		this.onChoose(item);
 	}
+}
+
+interface PathListOptions<T extends TAbstractFile> {
+	key: "pinnedPaths" | "wanderFolders";
+	name: string;
+	desc: string;
+	placeholder: string;
+	emptyText: string;
+	getItems: () => T[];
 }
 
 export class ObsidianHomeSettingTab extends PluginSettingTab {
@@ -101,36 +111,82 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("置顶笔记").setHeading();
 
+		this.addPathList(containerEl, {
+			key: "pinnedPaths",
+			name: "添加笔记",
+			desc: "搜索并选择要固定展示在首页“置顶笔记”区的笔记",
+			placeholder: "输入笔记名称搜索…",
+			emptyText: "暂无置顶笔记",
+			getItems: () => this.app.vault.getMarkdownFiles(),
+		});
+
+		new Setting(containerEl).setName("笔记漫游").setHeading();
+
 		new Setting(containerEl)
-			.setName("添加笔记")
-			.setDesc("搜索并选择要固定展示在首页“置顶笔记”区的笔记")
-			.addSearch((search) => {
-				search.setPlaceholder("输入笔记名称搜索…");
-				new FileSuggest(this.app, search.inputEl, async (file) => {
-					if (!this.plugin.settings.pinnedPaths.includes(file.path)) {
-						this.plugin.settings.pinnedPaths.push(file.path);
+			.setName("启用笔记漫游")
+			.setDesc("在“置顶笔记”下方随机展示所选文件夹中的笔记，点击“换一换”重新抽取")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.wanderEnabled).onChange(async (value) => {
+					this.plugin.settings.wanderEnabled = value;
+					await this.plugin.saveSettings();
+					this.plugin.refreshAllHomeViews();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("漫游数量")
+			.setDesc("每次随机展示的笔记篇数")
+			.addText((text) =>
+				text.setValue(String(this.plugin.settings.wanderCount)).onChange(async (value) => {
+					const n = parseInt(value, 10);
+					if (!isNaN(n) && n > 0) {
+						this.plugin.settings.wanderCount = n;
 						await this.plugin.saveSettings();
 						this.plugin.refreshAllHomeViews();
-						this.display();
 					}
+				})
+			);
+
+		this.addPathList(containerEl, {
+			key: "wanderFolders",
+			name: "添加文件夹",
+			desc: "从这些文件夹（含子文件夹）中随机抽取笔记",
+			placeholder: "输入文件夹名称搜索…",
+			emptyText: "暂未选择文件夹",
+			getItems: () => this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder),
+		});
+	}
+
+	// Search box that appends to a settings path list, followed by the list with remove buttons.
+	private addPathList<T extends TAbstractFile>(containerEl: HTMLElement, opts: PathListOptions<T>) {
+		const settings = this.plugin.settings;
+		const update = async (paths: string[]) => {
+			settings[opts.key] = paths;
+			await this.plugin.saveSettings();
+			this.plugin.refreshAllHomeViews();
+			this.display();
+		};
+
+		new Setting(containerEl)
+			.setName(opts.name)
+			.setDesc(opts.desc)
+			.addSearch((search) => {
+				search.setPlaceholder(opts.placeholder);
+				new PathSuggest(this.app, search.inputEl, opts.getItems, (item) => {
+					if (!settings[opts.key].includes(item.path)) void update([...settings[opts.key], item.path]);
 				});
 			});
 
-		if (this.plugin.settings.pinnedPaths.length === 0) {
-			containerEl.createDiv({ cls: "setting-item-description", text: "暂无置顶笔记" });
+		if (settings[opts.key].length === 0) {
+			containerEl.createDiv({ cls: "setting-item-description", text: opts.emptyText });
 		}
 
-		for (const path of this.plugin.settings.pinnedPaths) {
+		for (const path of settings[opts.key]) {
 			new Setting(containerEl).setName(path).addExtraButton((btn) =>
 				btn
 					.setIcon("x")
 					.setTooltip("移除")
-					.onClick(async () => {
-						this.plugin.settings.pinnedPaths = this.plugin.settings.pinnedPaths.filter((p) => p !== path);
-						await this.plugin.saveSettings();
-						this.plugin.refreshAllHomeViews();
-						this.display();
-					})
+					.onClick(() => void update(settings[opts.key].filter((p) => p !== path)))
 			);
 		}
 	}

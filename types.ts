@@ -9,6 +9,9 @@ export interface ObsidianHomeSettings {
 	// Frontmatter properties that override file ctime/mtime; empty means use file stat.
 	createdProperty: string;
 	updatedProperty: string;
+	wanderEnabled: boolean;
+	wanderFolders: string[];
+	wanderCount: number;
 }
 
 export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
@@ -19,6 +22,9 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	openOnMobileStartup: true,
 	createdProperty: "created",
 	updatedProperty: "updated",
+	wanderEnabled: false,
+	wanderFolders: [],
+	wanderCount: 2,
 };
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";

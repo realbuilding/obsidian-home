@@ -3,8 +3,22 @@ import type ObsidianHomePlugin from "./main";
 import { VIEW_TYPE_HOME } from "./types";
 import { formatTime, loadPreview, parseDateProperty } from "./previewUtils";
 
+// Picks up to `count` distinct items via a partial Fisher-Yates shuffle.
+function pickRandom<T>(items: T[], count: number): T[] {
+	const pool = items.slice();
+	const n = Math.min(count, pool.length);
+	for (let i = 0; i < n; i++) {
+		const j = i + Math.floor(Math.random() * (pool.length - i));
+		[pool[i], pool[j]] = [pool[j], pool[i]];
+	}
+	return pool.slice(0, n);
+}
+
 export class ObsidianHomeView extends ItemView {
 	private plugin: ObsidianHomePlugin;
+	// Current wander picks, kept per view so vault-triggered re-renders don't
+	// reshuffle them; only the manual refresh button draws new ones.
+	private wanderPaths: string[] = [];
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianHomePlugin) {
 		super(leaf);
@@ -50,6 +64,8 @@ export class ObsidianHomeView extends ItemView {
 			pinnedFiles.forEach((file) => this.renderCard(grid, file, true));
 		}
 
+		if (this.plugin.settings.wanderEnabled) this.renderWander(scroll, pinnedFiles);
+
 		const recentSection = scroll.createDiv({ cls: "oh-section" });
 		const recentLabel = recentSection.createDiv({ cls: "oh-section-label oh-section-label-row" });
 		recentLabel.createSpan({ text: "最近文件" });
@@ -85,10 +101,10 @@ export class ObsidianHomeView extends ItemView {
 	private renderSortToggle(parent: HTMLElement) {
 		const sortBy = this.plugin.settings.sortBy;
 		const btn = parent.createEl("button", {
-			cls: "oh-sort-toggle",
+			cls: "oh-label-btn",
 			attr: { "aria-label": "切换排序方式" },
 		});
-		setIcon(btn.createSpan({ cls: "oh-sort-toggle-icon" }), "arrow-up-down");
+		setIcon(btn.createSpan({ cls: "oh-label-btn-icon" }), "arrow-up-down");
 		btn.createSpan({ text: sortBy === "ctime" ? "创建时间" : "修改时间" });
 
 		btn.addEventListener("click", async () => {
@@ -96,6 +112,45 @@ export class ObsidianHomeView extends ItemView {
 			await this.plugin.saveSettings();
 			this.plugin.refreshAllHomeViews();
 		});
+	}
+
+	private renderWander(parent: HTMLElement, pinnedFiles: TFile[]) {
+		const section = parent.createDiv({ cls: "oh-section" });
+		const label = section.createDiv({ cls: "oh-section-label oh-section-label-row" });
+		label.createSpan({ text: "笔记漫游" });
+
+		const count = this.plugin.settings.wanderCount;
+		const candidates = this.getWanderCandidates(pinnedFiles);
+		const byPath = new Map(candidates.map((f) => [f.path, f]));
+		let files = this.wanderPaths.map((p) => byPath.get(p)).filter((f): f is TFile => f !== undefined);
+		// Redraw when picks were deleted, moved out of the folders, never drawn, or the count changed.
+		if (files.length !== Math.min(count, candidates.length)) {
+			files = pickRandom(candidates, count);
+			this.wanderPaths = files.map((f) => f.path);
+		}
+
+		if (candidates.length > 0) {
+			const btn = label.createEl("button", { cls: "oh-label-btn", attr: { "aria-label": "换一批漫游笔记" } });
+			setIcon(btn.createSpan({ cls: "oh-label-btn-icon" }), "shuffle");
+			btn.createSpan({ text: "换一换" });
+			btn.addEventListener("click", () => {
+				// Avoid repeating the current picks when the pool is large enough.
+				const current = new Set(this.wanderPaths);
+				const fresh = candidates.filter((f) => !current.has(f.path));
+				const pool = fresh.length >= count ? fresh : candidates;
+				this.wanderPaths = pickRandom(pool, count).map((f) => f.path);
+				void this.render();
+			});
+		}
+
+		if (files.length === 0) {
+			const hint = this.plugin.settings.wanderFolders.length === 0 ? "请在设置中选择漫游文件夹" : "所选文件夹中暂无笔记";
+			section.createDiv({ cls: "oh-empty", text: hint });
+			return;
+		}
+
+		const grid = section.createDiv({ cls: "oh-grid" });
+		files.forEach((file) => this.renderCard(grid, file, false));
 	}
 
 	private renderCard(grid: HTMLElement, file: TFile, pinned: boolean) {
@@ -165,6 +220,14 @@ export class ObsidianHomeView extends ItemView {
 		}
 
 		return resolved;
+	}
+
+	private getWanderCandidates(exclude: TFile[]): TFile[] {
+		const folders = this.plugin.settings.wanderFolders;
+		if (folders.length === 0) return [];
+		const excluded = new Set(exclude.map((f) => f.path));
+		const inFolder = (path: string) => folders.some((dir) => dir === "/" || path.startsWith(`${dir}/`));
+		return this.plugin.app.vault.getMarkdownFiles().filter((f) => !excluded.has(f.path) && inFolder(f.path));
 	}
 
 	private getRecentFiles(exclude: TFile[]): TFile[] {

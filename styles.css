@@ -52,8 +52,8 @@
 
 /* Obsidian's base stylesheet gives bare <button> elements a filled
    background + box-shadow; qualify with the parent class and null out
-   every box-decoration property so the toggle reads as plain text. */
-.oh-section-label-row .oh-sort-toggle {
+   every box-decoration property so the button reads as plain text. */
+.oh-section-label-row .oh-label-btn {
 	appearance: none;
 	-webkit-appearance: none;
 	border: none;
@@ -75,16 +75,16 @@
 	cursor: pointer;
 }
 
-.oh-section-label-row .oh-sort-toggle:hover {
+.oh-section-label-row .oh-label-btn:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.oh-sort-toggle-icon {
+.oh-label-btn-icon {
 	display: inline-flex;
 }
 
-.oh-sort-toggle-icon svg {
+.oh-label-btn-icon svg {
 	width: 12px;
 	height: 12px;
 }
