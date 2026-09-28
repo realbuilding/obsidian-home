@@ -16,9 +16,6 @@ function pickRandom<T>(items: T[], count: number): T[] {
 
 export class ObsidianHomeView extends ItemView {
 	private plugin: ObsidianHomePlugin;
-	// Current wander picks, kept per view so vault-triggered re-renders don't
-	// reshuffle them; only the manual refresh button draws new ones.
-	private wanderPaths: string[] = [];
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianHomePlugin) {
 		super(leaf);
@@ -119,14 +116,25 @@ export class ObsidianHomeView extends ItemView {
 		const label = section.createDiv({ cls: "oh-section-label oh-section-label-row" });
 		label.createSpan({ text: "笔记漫游" });
 
-		const count = this.plugin.settings.wanderCount;
+		const settings = this.plugin.settings;
+		const count = settings.wanderCount;
 		const candidates = this.getWanderCandidates(pinnedFiles);
 		const byPath = new Map(candidates.map((f) => [f.path, f]));
-		let files = this.wanderPaths.map((p) => byPath.get(p)).filter((f): f is TFile => f !== undefined);
-		// Redraw when picks were deleted, moved out of the folders, never drawn, or the count changed.
-		if (files.length !== Math.min(count, candidates.length)) {
-			files = pickRandom(candidates, count);
-			this.wanderPaths = files.map((f) => f.path);
+		let files = settings.wanderPaths
+			.map((p) => byPath.get(p))
+			.filter((f): f is TFile => f !== undefined)
+			.slice(0, count);
+
+		// Only top up gaps (deleted notes, larger count) and keep the rest, so
+		// picks change solely on manual shuffle. Skip before layout is ready,
+		// when the vault file list may still be incomplete.
+		if (this.plugin.app.workspace.layoutReady) {
+			if (files.length < Math.min(count, candidates.length)) {
+				const kept = new Set(files.map((f) => f.path));
+				const extra = pickRandom(candidates.filter((f) => !kept.has(f.path)), count - files.length);
+				files = files.concat(extra);
+			}
+			this.saveWanderPaths(files.map((f) => f.path));
 		}
 
 		if (candidates.length > 0) {
@@ -135,11 +143,11 @@ export class ObsidianHomeView extends ItemView {
 			btn.createSpan({ text: "换一换" });
 			btn.addEventListener("click", () => {
 				// Avoid repeating the current picks when the pool is large enough.
-				const current = new Set(this.wanderPaths);
+				const current = new Set(settings.wanderPaths);
 				const fresh = candidates.filter((f) => !current.has(f.path));
 				const pool = fresh.length >= count ? fresh : candidates;
-				this.wanderPaths = pickRandom(pool, count).map((f) => f.path);
-				void this.render();
+				this.saveWanderPaths(pickRandom(pool, count).map((f) => f.path));
+				this.plugin.refreshAllHomeViews();
 			});
 		}
 
@@ -151,6 +159,13 @@ export class ObsidianHomeView extends ItemView {
 
 		const grid = section.createDiv({ cls: "oh-grid" });
 		files.forEach((file) => this.renderCard(grid, file, false));
+	}
+
+	private saveWanderPaths(paths: string[]) {
+		const settings = this.plugin.settings;
+		if (paths.join("\n") === settings.wanderPaths.join("\n")) return;
+		settings.wanderPaths = paths;
+		void this.plugin.saveSettings();
 	}
 
 	private renderCard(grid: HTMLElement, file: TFile, pinned: boolean) {

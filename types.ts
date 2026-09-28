@@ -12,6 +12,8 @@ export interface ObsidianHomeSettings {
 	wanderEnabled: boolean;
 	wanderFolders: string[];
 	wanderCount: number;
+	// Current wander picks; persisted so they only change on manual shuffle.
+	wanderPaths: string[];
 }
 
 export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	wanderEnabled: false,
 	wanderFolders: [],
 	wanderCount: 2,
+	wanderPaths: [],
 };
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";

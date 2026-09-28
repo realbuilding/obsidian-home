@@ -40,7 +40,12 @@ export default class ObsidianHomePlugin extends Plugin {
 		this.registerEvent(this.app.vault.on("create", () => this.scheduleRefresh()));
 		this.registerEvent(this.app.vault.on("modify", () => this.scheduleRefresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this.scheduleRefresh()));
-		this.registerEvent(this.app.vault.on("rename", () => this.scheduleRefresh()));
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				this.remapSavedPaths(oldPath, file.path);
+				this.scheduleRefresh();
+			})
+		);
 		// Frontmatter dates may only become available once the metadata cache resolves.
 		this.registerEvent(this.app.metadataCache.on("resolved", () => this.scheduleRefresh()));
 	}
@@ -72,6 +77,18 @@ export default class ObsidianHomePlugin extends Plugin {
 
 	refreshAllHomeViews() {
 		this.homeViews.forEach((view) => void view.render());
+	}
+
+	// Follow renames/moves so saved pins, wander folders and picks aren't dropped.
+	private remapSavedPaths(oldPath: string, newPath: string) {
+		const remap = (p: string) =>
+			p === oldPath ? newPath : p.startsWith(`${oldPath}/`) ? newPath + p.slice(oldPath.length) : p;
+		const s = this.settings;
+		const before = JSON.stringify([s.pinnedPaths, s.wanderFolders, s.wanderPaths]);
+		s.pinnedPaths = s.pinnedPaths.map(remap);
+		s.wanderFolders = s.wanderFolders.map(remap);
+		s.wanderPaths = s.wanderPaths.map(remap);
+		if (JSON.stringify([s.pinnedPaths, s.wanderFolders, s.wanderPaths]) !== before) void this.saveSettings();
 	}
 
 	private scheduleRefresh() {
