@@ -2,6 +2,7 @@ import { Platform, Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, EMPTY_VIEW_TYPE, ObsidianHomeSettings, VIEW_TYPE_HOME } from "./types";
 import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
+import { NutstoreSyncWatcher } from "./syncStatus";
 
 const REFRESH_DEBOUNCE_MS = 800;
 // Hides the restored note while the app boots, so the startup home view
@@ -12,6 +13,7 @@ export default class ObsidianHomePlugin extends Plugin {
 	settings: ObsidianHomeSettings = DEFAULT_SETTINGS;
 	private homeViews = new Set<ObsidianHomeView>();
 	private refreshTimer: number | null = null;
+	syncWatcher = new NutstoreSyncWatcher(this.app, () => this.scheduleRefresh());
 
 	async onload() {
 		await this.loadSettings();
@@ -24,6 +26,7 @@ export default class ObsidianHomePlugin extends Plugin {
 
 		this.app.workspace.onLayoutReady(async () => {
 			this.convertEmptyLeaves();
+			this.syncWatcher.start();
 			if (!openOnStartup) return;
 			try {
 				await this.openHome();
@@ -44,6 +47,7 @@ export default class ObsidianHomePlugin extends Plugin {
 
 	onunload() {
 		document.body.removeClass(BOOTING_CLASS);
+		this.syncWatcher.stop();
 		if (this.refreshTimer !== null) {
 			window.clearTimeout(this.refreshTimer);
 			this.refreshTimer = null;

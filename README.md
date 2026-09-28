@@ -7,6 +7,7 @@
 - 每张卡片展示标题、正文预览、时间戳，点击卡片主体在当前标签页打开该文件
 - 右下角悬浮按钮新建笔记，遵循 Obsidian「新建文件默认位置」设置
 - 移动端启动时自动打开首页（可在设置中关闭）
+- 如已启用 [Nutstore Sync](https://github.com/nutstore/obsidian-nutstore-sync) 插件，首页顶部显示本设备最近一次同步时间（该插件未提供公开 API，这里读取其运行时状态；未启用或读取失败时自动隐藏）
 - 全部样式基于 Obsidian 主题 CSS 变量（`--interactive-accent`、`--text-normal` 等），自动跟随你当前的强调色和明暗主题，无需单独配置
 - 桌面端 / 移动端通用（仅调用 Obsidian 公共 API，未使用任何 Electron/Node 专属能力）
 
@@ -14,7 +15,7 @@
 
 - 通过监听工作区叶子、把 Obsidian 内置的 `"empty"`（新标签页）视图转换成插件自己注册的 `ItemView`（`obsidian-home-view`）来接管整个新标签页，原生按钮不再渲染
 - 正文预览使用 `vault.cachedRead()`，只读取当前显示的笔记数量，优先走内存缓存，不做全库扫描或 Dataview 式的查询解析，避免 Dataview 在移动端常见的卡顿问题；文件增删改会做 800ms 防抖后才刷新
-- 代码按职责拆分：`main.ts`（生命周期与叶子转换）、`homeView.ts`（卡片渲染与交互）、`settingsTab.ts`（设置面板与置顶笔记搜索）、`previewUtils.ts`（预览文本提取，纯函数）
+- 代码按职责拆分：`main.ts`（生命周期与叶子转换）、`homeView.ts`（卡片渲染与交互）、`settingsTab.ts`（设置面板与置顶笔记搜索）、`previewUtils.ts`（预览文本提取，纯函数）、`syncStatus.ts`（Nutstore Sync 同步时间读取）
 
 ## 安装
 

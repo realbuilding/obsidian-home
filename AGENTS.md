@@ -32,6 +32,7 @@ ObsidianHome 是一个 Obsidian 插件，用卡片式主页**完全替换**新�
 | `homeView.ts` | `ItemView` 实现：排序切换、卡片渲染、右键菜单、新建笔记 |
 | `settingsTab.ts` | 设置面板与置顶笔记搜索（`AbstractInputSuggest`） |
 | `previewUtils.ts` | 正文预览提取与时间格式化（纯函数为主） |
+| `syncStatus.ts` | 读取 Nutstore Sync 插件的最近同步时间（非公开 API，防御式访问，存设备本地） |
 | `types.ts` | 设置类型、默认值、视图类型常量 |
 | `styles.css` | 样式，类名统一使用 `oh-` 前缀 |
 | `manifest.json` | Obsidian 插件清单，`version` 决定 Release tag |

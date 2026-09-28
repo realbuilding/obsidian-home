@@ -118,6 +118,26 @@
 	background: rgba(var(--interactive-accent-rgb), 0.06);
 }
 
+.oh-sync-status {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-bottom: 12px;
+	color: var(--text-faint);
+	font-size: 0.75em;
+}
+
+.oh-sync-status-icon {
+	display: inline-flex;
+	width: 11px;
+	height: 11px;
+}
+
+.oh-sync-status-icon svg {
+	width: 11px;
+	height: 11px;
+}
+
 .oh-card-pin-tag {
 	display: flex;
 	align-items: center;

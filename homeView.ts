@@ -40,6 +40,7 @@ export class ObsidianHomeView extends ItemView {
 		this.renderHeader(container);
 
 		const scroll = container.createDiv({ cls: "oh-scroll" });
+		this.renderSyncStatus(scroll);
 		const pinnedFiles = this.getPinnedFiles();
 
 		if (pinnedFiles.length > 0) {
@@ -70,6 +71,14 @@ export class ObsidianHomeView extends ItemView {
 	private renderHeader(container: HTMLElement) {
 		const header = container.createDiv({ cls: "oh-header" });
 		header.createDiv({ cls: "oh-title", text: "ObsidianHome" });
+	}
+
+	private renderSyncStatus(parent: HTMLElement) {
+		const lastSync = this.plugin.syncWatcher.getLastSyncTime();
+		if (lastSync === null) return;
+		const el = parent.createDiv({ cls: "oh-sync-status" });
+		setIcon(el.createSpan({ cls: "oh-sync-status-icon" }), "refresh-cw");
+		el.createSpan({ text: `上次同步 ${formatTime(lastSync)}` });
 	}
 
 	// Lightweight single-button toggle: shows the current sort key, click flips it.
