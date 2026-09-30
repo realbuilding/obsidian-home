@@ -184,9 +184,11 @@ export class ObsidianHomeView extends ItemView {
 
 		const previewEl = card.createDiv({ cls: "oh-card-preview" });
 
-		const ts = this.getFileTime(file);
+		// Label the time so it is clear which one follows the current sort key.
+		const timeLabel = this.plugin.settings.sortBy === "ctime" ? "创建于" : "修改于";
+		const time = `${timeLabel} ${formatTime(this.getFileTime(file))}`;
 		const folder = file.parent && file.parent.path !== "/" ? file.parent.path : "";
-		card.createDiv({ cls: "oh-card-meta", text: folder ? `${formatTime(ts)} · ${folder}` : formatTime(ts) });
+		card.createDiv({ cls: "oh-card-meta", text: folder ? `${time} · ${folder}` : time });
 
 		const openMenu = (evt: MouseEvent) => {
 			evt.preventDefault();
