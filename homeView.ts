@@ -36,6 +36,7 @@ export class ObsidianHomeView extends ItemView {
 
 	async onOpen() {
 		this.plugin.registerHomeView(this);
+		this.plugin.claimHome(this.leaf);
 		this.contentEl.addClass("oh-root");
 		await this.render();
 	}

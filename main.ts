@@ -1,4 +1,4 @@
-import { Platform, Plugin } from "obsidian";
+import { Platform, Plugin, WorkspaceLeaf } from "obsidian";
 import { DEFAULT_SETTINGS, EMPTY_VIEW_TYPE, ObsidianHomeSettings, VIEW_TYPE_HOME } from "./types";
 import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
@@ -25,6 +25,7 @@ export default class ObsidianHomePlugin extends Plugin {
 		if (openOnStartup) document.body.addClass(BOOTING_CLASS);
 
 		this.app.workspace.onLayoutReady(async () => {
+			this.dedupeRestoredHomes();
 			this.convertEmptyLeaves();
 			this.syncWatcher.start();
 			if (!openOnStartup) return;
@@ -73,6 +74,25 @@ export default class ObsidianHomePlugin extends Plugin {
 
 	unregisterHomeView(view: ObsidianHomeView) {
 		this.homeViews.delete(view);
+	}
+
+	// Keep a single home tab: whichever home opens last wins and the others are
+	// closed. Skipped while the workspace restores (several restored homes would
+	// close each other); dedupeRestoredHomes() handles that once layout is ready.
+	claimHome(leaf: WorkspaceLeaf) {
+		if (!this.app.workspace.layoutReady) return;
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_HOME).forEach((other) => {
+			if (other !== leaf) other.detach();
+		});
+	}
+
+	// Prefer the home the user is looking at, otherwise keep the first one.
+	private dedupeRestoredHomes() {
+		const { workspace } = this.app;
+		const homes = workspace.getLeavesOfType(VIEW_TYPE_HOME);
+		const active = workspace.getMostRecentLeaf();
+		const keep = homes.find((leaf) => leaf === active) ?? homes[0];
+		if (keep) this.claimHome(keep);
 	}
 
 	refreshAllHomeViews() {
