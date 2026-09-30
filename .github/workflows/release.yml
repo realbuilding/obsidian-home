@@ -1,45 +1,61 @@
 name: Release
 
-# Push a tag matching manifest.json's version (e.g. 2.4.2, no "v" prefix)
-# to build the plugin and publish a GitHub Release for BRAT.
+# On every push to main, publish a GitHub Release for BRAT if manifest.json's
+# version (tag without "v" prefix) has no release yet. Bump the version to release.
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version and check for existing release
+        id: version
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "$version" > /dev/null 2>&1; then
+            echo "Release $version already exists, skipping"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-node@v4
+        if: steps.version.outputs.exists == 'false'
         with:
           node-version: 20
           cache: npm
 
-      - name: Check tag matches manifest version
-        run: |
-          version=$(node -p "require('./manifest.json').version")
-          if [ "$version" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match manifest.json version $version"
-            exit 1
-          fi
+      - if: steps.version.outputs.exists == 'false'
+        run: npm ci
 
-      - run: npm ci
-      - run: npm run build
+      - if: steps.version.outputs.exists == 'false'
+        run: npm run build
 
       - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.version.outputs.exists == 'false'
         run: |
-          # Use the annotated tag message as release notes; checkout drops it, so refetch.
-          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
-          notes=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
-          [ -n "$notes" ] || notes="$GITHUB_REF_NAME"
-          gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
-            --title "$GITHUB_REF_NAME" \
+          version="${{ steps.version.outputs.version }}"
+          # Release notes: subject of the latest commit that changed manifest.json.
+          notes=$(git log -1 --format=%s -- manifest.json)
+          gh release create "$version" main.js manifest.json styles.css \
+            --target "$GITHUB_SHA" \
+            --title "$version" \
             --notes "$notes"
