@@ -98,6 +98,7 @@
 .oh-card {
 	position: relative;
 	box-sizing: border-box;
+	min-width: 0;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m, 10px);
@@ -210,9 +211,23 @@
 }
 
 .oh-card-meta {
+	display: flex;
+	min-width: 0;
 	font-size: 0.75em;
 	color: var(--text-faint);
 	margin-top: auto;
+	white-space: nowrap;
+}
+
+.oh-card-meta-time {
+	flex-shrink: 0;
+}
+
+.oh-card-meta-folder {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: pre;
 }
 
 .oh-empty {

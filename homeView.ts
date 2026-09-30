@@ -188,7 +188,10 @@ export class ObsidianHomeView extends ItemView {
 		const timeLabel = this.plugin.settings.sortBy === "ctime" ? "创建于" : "修改于";
 		const time = `${timeLabel} ${formatTime(this.getFileTime(file))}`;
 		const folder = file.parent && file.parent.path !== "/" ? file.parent.path : "";
-		card.createDiv({ cls: "oh-card-meta", text: folder ? `${time} · ${folder}` : time });
+		// Single line: time stays intact, folder is truncated with an ellipsis.
+		const meta = card.createDiv({ cls: "oh-card-meta" });
+		meta.createSpan({ cls: "oh-card-meta-time", text: time });
+		if (folder) meta.createSpan({ cls: "oh-card-meta-folder", text: ` · ${folder}`, attr: { title: folder } });
 
 		const openMenu = (evt: MouseEvent) => {
 			evt.preventDefault();
