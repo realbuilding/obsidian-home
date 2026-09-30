@@ -37,6 +37,7 @@ ObsidianHome 是一个 Obsidian 插件，用卡片式主页**完全替换**新�
 | `styles.css` | 样式，类名统一使用 `oh-` 前缀 |
 | `manifest.json` | Obsidian 插件清单，`version` 决定 Release tag |
 | `esbuild.config.mjs` | 构建配置，入口 `main.ts`，输出 `main.js` |
+| `.github/workflows/release.yml` | 推送 `main` 时按 `manifest.json` 版本自动构建并创建 Release |
 
 ## 开发约束
 
@@ -56,17 +57,15 @@ npm run build   # 生产构建，发布前必须用这个
 
 ## 发布流程（BRAT）
 
-用户通过 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 安装，填入 `realbuilding/obsidian-home`。BRAT 从 GitHub Release 读取文件，因此：
+用户通过 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 安装，填入 `realbuilding/obsidian-home`。BRAT 从 GitHub Release 读取文件，Release 由 GitHub Actions 自动创建（`.github/workflows/release.yml`）：
 
 1. 同步修改 `manifest.json` 与 `package.json` 的 `version`（如 `2.0.1`）。
-2. `npm run build` 生成生产版 `main.js`。
-3. 提交并推送源码改动。
-4. 创建 Release，**tag 必须与 `manifest.json` 的 `version` 完全一致，不加 `v` 前缀**，并附带三个文件：
+2. 本地 `npm run build` 确认构建通过（`main.js` 不提交）。
+3. 提交并推送到 `main`。**修改 `manifest.json` 的那次提交的标题会作为 Release 说明**，建议写成 `2.0.1: <更新说明>`。
+4. 工作流在每次推送 `main` 时运行：若 `manifest.json` 的 `version` 尚无对应 Release，则执行 `npm ci && npm run build`，并创建 tag 与 Release（**tag 与 `version` 完全一致，不加 `v` 前缀**），附带 `main.js`、`manifest.json`、`styles.css` 三个文件；已存在则跳过。也可在 Actions 页面手动触发（`workflow_dispatch`）。
+5. 推送后在 GitHub 的 Actions / Releases 页面确认发布成功，再让用户在 BRAT 中检查更新。
+6. Release 说明（即提交标题）中不要包含隐私信息（见上文）。
 
-   ```bash
-   gh release create 2.0.1 main.js manifest.json styles.css --title "2.0.1" --notes "<更新说明>"
-   ```
+不需要也不要手动推送 tag 或执行 `gh release create`，否则会与自动发布冲突。
 
-5. Release 说明中不要包含隐私信息（见上文）。
-
-未经维护者明确要求，不要执行 `git commit`、`git push` 或 `gh release create`。
+未经维护者明确要求，不要执行 `git commit` 或 `git push`（推送 `main` 且版本号有变化即会自动发布 Release）。
