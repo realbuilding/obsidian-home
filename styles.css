@@ -319,3 +319,10 @@
 body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
 	visibility: hidden;
 }
+
+.oh-diagnostics-text {
+	width: 100%;
+	font-family: var(--font-monospace);
+	font-size: 0.8em;
+	margin-bottom: 12px;
+}
