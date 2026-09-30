@@ -1,7 +1,7 @@
 import { ItemView, Menu, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type ObsidianHomePlugin from "./main";
 import { VIEW_TYPE_HOME } from "./types";
-import { formatTime, loadPreview, parseDateProperty } from "./previewUtils";
+import { formatTime, loadPreview, parseDateProperty, parseRating } from "./previewUtils";
 
 // Picks up to `count` distinct items via a partial Fisher-Yates shuffle.
 function pickRandom<T>(items: T[], count: number): T[] {
@@ -180,8 +180,12 @@ export class ObsidianHomeView extends ItemView {
 
 		const titleRow = card.createDiv({ cls: "oh-card-title-row" });
 		titleRow.createDiv({ cls: "oh-card-title", text: file.basename });
-		const menuBtn = titleRow.createEl("button", { cls: "oh-card-menu-btn", attr: { "aria-label": "更多操作" } });
-		setIcon(menuBtn, "more-vertical");
+		const rating = parseRating(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.rating);
+		if (rating !== null) {
+			const badge = titleRow.createSpan({ cls: `oh-card-rating oh-card-rating-${rating}`, attr: { "aria-label": `${rating} 星` } });
+			setIcon(badge.createSpan({ cls: "oh-card-rating-icon" }), "star");
+			badge.createSpan({ text: String(rating) });
+		}
 
 		const previewEl = card.createDiv({ cls: "oh-card-preview" });
 
@@ -211,13 +215,10 @@ export class ObsidianHomeView extends ItemView {
 			menu.showAtMouseEvent(evt);
 		};
 
-		menuBtn.addEventListener("click", (evt) => openMenu(evt));
+		// Right-click on desktop, long-press on mobile.
 		card.addEventListener("contextmenu", (evt) => openMenu(evt));
 
-		card.addEventListener("click", (evt) => {
-			if ((evt.target as HTMLElement).closest(".oh-card-menu-btn")) return;
-			void this.leaf.openFile(file, { active: true });
-		});
+		card.addEventListener("click", () => void this.leaf.openFile(file, { active: true }));
 
 		void loadPreview(this.plugin.app.vault, file, this.plugin.settings.previewLines).then((text) => {
 			if (text) previewEl.setText(text);

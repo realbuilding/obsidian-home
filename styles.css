@@ -163,12 +163,14 @@
 
 .oh-card-title-row {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
 }
 
 .oh-card-title {
+	flex: 1 1 auto;
+	min-width: 0;
 	font-size: 0.95em;
 	font-weight: 600;
 	color: var(--text-normal);
@@ -177,27 +179,50 @@
 	text-overflow: ellipsis;
 }
 
-.oh-card .oh-card-menu-btn {
-	appearance: none;
-	-webkit-appearance: none;
+/* Rating badge: one star + digit; emphasis grows with the score
+   (1-2 faint, 3 muted, 4 yellow star, 5 yellow pill). */
+.oh-card-rating {
 	flex-shrink: 0;
-	width: 24px;
-	height: 24px;
-	border: none;
-	outline: none;
-	box-shadow: none;
-	background: transparent;
-	border-radius: 6px;
-	color: var(--text-faint);
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	cursor: pointer;
+	gap: 2px;
+	/* Pull the pill padding into the card gutter so the text sits flush right. */
+	margin-right: -6px;
+	padding: 3px 6px;
+	border-radius: 999px;
+	font-size: 0.75em;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	color: var(--text-faint);
 }
 
-.oh-card .oh-card-menu-btn:hover {
-	background: var(--background-modifier-hover);
+.oh-card-rating-icon {
+	display: inline-flex;
+}
+
+.oh-card-rating-icon svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+.oh-card-rating-3 {
+	color: var(--text-muted);
+}
+
+.oh-card-rating-4 {
 	color: var(--text-normal);
+}
+
+.oh-card-rating-4 .oh-card-rating-icon,
+.oh-card-rating-5 .oh-card-rating-icon {
+	color: var(--color-yellow);
+}
+
+.oh-card-rating-5 {
+	color: var(--text-normal);
+	background: rgba(var(--color-yellow-rgb), 0.18);
 }
 
 .oh-card-preview {

@@ -53,3 +53,9 @@ export function parseDateProperty(value: unknown): number | null {
 	const parsed = moment(value.trim(), DATE_FORMATS, true);
 	return parsed.isValid() ? parsed.valueOf() : null;
 }
+
+// Accepts an integer 1-5 (number or numeric string); anything else means unrated.
+export function parseRating(value: unknown): number | null {
+	const n = typeof value === "string" ? Number(value.trim()) : value;
+	return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+}
