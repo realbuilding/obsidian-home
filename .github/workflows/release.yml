@@ -36,6 +36,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Use the annotated tag message as release notes; checkout drops it, so refetch.
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          notes=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+          [ -n "$notes" ] || notes="$GITHUB_REF_NAME"
           gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
             --title "$GITHUB_REF_NAME" \
-            --notes "$(git log -1 --format=%s "$GITHUB_REF_NAME")"
+            --notes "$notes"
