@@ -171,8 +171,6 @@ export class ObsidianHomeView extends ItemView {
 
 	private renderCard(grid: HTMLElement, file: TFile, pinned: boolean) {
 		const card = grid.createDiv({ cls: pinned ? "oh-card oh-card-pinned" : "oh-card" });
-		// Lets the diagnostics command map cards back to their notes.
-		card.dataset.path = file.path;
 
 		if (pinned) {
 			const tag = card.createDiv({ cls: "oh-card-pin-tag" });

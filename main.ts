@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, EMPTY_VIEW_TYPE, ObsidianHomeSettings, VIEW_TYPE_HOME
 import { ObsidianHomeView } from "./homeView";
 import { ObsidianHomeSettingTab } from "./settingsTab";
 import { NutstoreSyncWatcher } from "./syncStatus";
-import { DiagnosticsModal, collectDiagnostics } from "./diagnostics";
 
 const REFRESH_DEBOUNCE_MS = 800;
 // Hides the restored note while the app boots, so the startup home view
@@ -21,12 +20,6 @@ export default class ObsidianHomePlugin extends Plugin {
 		this.addSettingTab(new ObsidianHomeSettingTab(this.app, this));
 
 		this.registerView(VIEW_TYPE_HOME, (leaf) => new ObsidianHomeView(leaf, this));
-
-		this.addCommand({
-			id: "copy-diagnostics",
-			name: "复制诊断信息",
-			callback: async () => new DiagnosticsModal(this.app, await collectDiagnostics(this)).open(),
-		});
 
 		const openOnStartup = Platform.isMobile && this.settings.openOnMobileStartup;
 		if (openOnStartup) document.body.addClass(BOOTING_CLASS);
