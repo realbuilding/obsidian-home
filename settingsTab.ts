@@ -59,7 +59,7 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 			.addDropdown((drop) =>
 				drop
 					.addOption("ctime", "创建时间")
-					.addOption("mtime", "修改时间")
+					.addOption("mtime", "更新时间")
 					.setValue(this.plugin.settings.sortBy)
 					.onChange(async (value) => {
 						this.plugin.settings.sortBy = value as SortKey;
@@ -69,7 +69,7 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 			);
 
 		this.addPropertySetting(containerEl, "创建时间属性", "按创建时间排序时优先读取的笔记属性，留空则使用文件自身的创建时间", "createdProperty");
-		this.addPropertySetting(containerEl, "修改时间属性", "按修改时间排序时优先读取的笔记属性，留空则使用文件自身的修改时间", "updatedProperty");
+		this.addPropertySetting(containerEl, "更新时间属性", "按更新时间排序时优先读取的笔记属性，留空则使用文件自身的修改时间", "updatedProperty");
 
 		new Setting(containerEl)
 			.setName("移动端启动时打开首页")

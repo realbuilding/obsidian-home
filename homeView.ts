@@ -103,7 +103,7 @@ export class ObsidianHomeView extends ItemView {
 			attr: { "aria-label": "切换排序方式" },
 		});
 		setIcon(btn.createSpan({ cls: "oh-label-btn-icon" }), "arrow-up-down");
-		btn.createSpan({ text: sortBy === "ctime" ? "创建时间" : "修改时间" });
+		btn.createSpan({ text: sortBy === "ctime" ? "创建时间" : "更新时间" });
 
 		btn.addEventListener("click", async () => {
 			this.plugin.settings.sortBy = sortBy === "ctime" ? "mtime" : "ctime";
@@ -190,7 +190,7 @@ export class ObsidianHomeView extends ItemView {
 		const previewEl = card.createDiv({ cls: "oh-card-preview" });
 
 		// Label the time so it is clear which one follows the current sort key.
-		const timeLabel = this.plugin.settings.sortBy === "ctime" ? "创建于" : "修改于";
+		const timeLabel = this.plugin.settings.sortBy === "ctime" ? "创建于" : "更新于";
 		const time = `${timeLabel} ${formatTime(this.getFileTime(file))}`;
 		const folder = file.parent && file.parent.path !== "/" ? file.parent.path : "";
 		// Single line: time stays intact, folder is truncated with an ellipsis.
