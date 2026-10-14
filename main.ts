@@ -5,6 +5,8 @@ import { ObsidianHomeSettingTab } from "./settingsTab";
 import { NutstoreSyncWatcher } from "./syncStatus";
 
 const REFRESH_DEBOUNCE_MS = 800;
+// Mobile only: opening a new tab closes the least recently used ones beyond this count.
+const MOBILE_MAX_TABS = 6;
 // Hides the restored note while the app boots, so the startup home view
 // replaces it without first flashing the previous page.
 const BOOTING_CLASS = "oh-booting";
@@ -138,8 +140,30 @@ export default class ObsidianHomePlugin extends Plugin {
 	// same technique mirnovov/obsidian-homepage uses: once converted, a leaf no
 	// longer matches "empty" so this never reconverts the same leaf twice.
 	private convertEmptyLeaves() {
-		this.app.workspace.getLeavesOfType(EMPTY_VIEW_TYPE).forEach((leaf) => {
-			void leaf.setViewState({ type: VIEW_TYPE_HOME, state: {} });
+		this.app.workspace.getLeavesOfType(EMPTY_VIEW_TYPE).forEach(async (leaf) => {
+			await leaf.setViewState({ type: VIEW_TYPE_HOME, state: {} });
+			if (!Platform.isMobile || !this.app.workspace.layoutReady) return;
+			// Wait until the home view has painted so closing tabs never delays it.
+			window.requestAnimationFrame(() => window.setTimeout(() => this.trimMobileTabs(leaf), 0));
 		});
+	}
+
+	// Close the least recently used tabs so at most MOBILE_MAX_TABS stay open,
+	// counting the new one. Pinned tabs are never closed. activeTime is not part
+	// of the public typings, so missing values sort as oldest.
+	private trimMobileTabs(keep: WorkspaceLeaf) {
+		const leaves: WorkspaceLeaf[] = [];
+		this.app.workspace.iterateRootLeaves((leaf) => {
+			leaves.push(leaf);
+		});
+		let excess = leaves.length - MOBILE_MAX_TABS;
+		if (excess <= 0) return;
+		const activeTime = (leaf: WorkspaceLeaf) => (leaf as unknown as { activeTime?: number }).activeTime ?? 0;
+		leaves
+			.filter((leaf) => leaf !== keep && !leaf.getViewState().pinned)
+			.sort((a, b) => activeTime(a) - activeTime(b))
+			.forEach((leaf) => {
+				if (excess-- > 0) leaf.detach();
+			});
 	}
 }
