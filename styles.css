@@ -298,13 +298,14 @@
 }
 
 /* Mobile: the view adds its own side padding, so a 160px minimum leaves room for
-   only one pinned card per row; phones get a fixed three columns, tablets auto-fill. */
+   only one pinned card per row; phones fit up to three columns, tablets auto-fill. */
 .is-mobile .oh-grid-compact {
 	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
 
+/* A one-third minimum caps the row at three; auto-fit lets one or two cards stretch. */
 .is-phone .oh-grid-compact {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(calc((100% - 16px) / 3), 1fr));
 	gap: 8px;
 }
 
