@@ -1,6 +1,6 @@
 import { AbstractInputSuggest, App, PluginSettingTab, Setting, TAbstractFile, TFolder } from "obsidian";
 import type ObsidianHomePlugin from "./main";
-import { SortKey } from "./types";
+import { ENCRYPTED_EXTENSION, SortKey } from "./types";
 
 class PathSuggest<T extends TAbstractFile> extends AbstractInputSuggest<T> {
 	private getItems: () => T[];
@@ -117,7 +117,7 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 			desc: "搜索并选择要固定展示在首页“置顶笔记”区的笔记",
 			placeholder: "输入笔记名称搜索…",
 			emptyText: "暂无置顶笔记",
-			getItems: () => this.app.vault.getMarkdownFiles(),
+			getItems: () => this.app.vault.getFiles().filter((f) => f.extension === "md" || f.extension === ENCRYPTED_EXTENSION),
 		});
 
 		new Setting(containerEl).setName("笔记漫游").setHeading();

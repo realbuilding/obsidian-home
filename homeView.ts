@@ -58,7 +58,7 @@ export class ObsidianHomeView extends ItemView {
 		if (pinnedFiles.length > 0) {
 			const section = scroll.createDiv({ cls: "oh-section" });
 			section.createDiv({ cls: "oh-section-label", text: "置顶笔记" });
-			const grid = section.createDiv({ cls: "oh-grid" });
+			const grid = section.createDiv({ cls: "oh-grid oh-grid-compact" });
 			pinnedFiles.forEach((file) => this.renderCard(grid, file, true));
 		}
 
@@ -172,14 +172,12 @@ export class ObsidianHomeView extends ItemView {
 	private renderCard(grid: HTMLElement, file: TFile, pinned: boolean) {
 		const card = grid.createDiv({ cls: pinned ? "oh-card oh-card-pinned" : "oh-card" });
 
-		if (pinned) {
-			const tag = card.createDiv({ cls: "oh-card-pin-tag" });
-			setIcon(tag.createSpan({ cls: "oh-card-pin-icon" }), "pin");
-			tag.createSpan({ text: "已置顶" });
-		}
-
 		const titleRow = card.createDiv({ cls: "oh-card-title-row" });
 		titleRow.createDiv({ cls: "oh-card-title", text: file.basename });
+		this.bindCardEvents(card, file, pinned);
+		// Pinned notes are familiar: show the title only to keep the cards compact.
+		if (pinned) return;
+
 		const rating = parseRating(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.rating);
 		if (rating !== null) {
 			const badge = titleRow.createSpan({ cls: `oh-card-rating oh-card-rating-${rating}`, attr: { "aria-label": `${rating} 星` } });
@@ -198,6 +196,12 @@ export class ObsidianHomeView extends ItemView {
 		meta.createSpan({ cls: "oh-card-meta-time", text: time });
 		if (folder) meta.createSpan({ cls: "oh-card-meta-folder", text: ` · ${folder}`, attr: { title: folder } });
 
+		void loadPreview(this.plugin.app.vault, file, this.plugin.settings.previewLines).then((text) => {
+			if (text) previewEl.setText(text);
+		});
+	}
+
+	private bindCardEvents(card: HTMLElement, file: TFile, pinned: boolean) {
 		const openMenu = (evt: MouseEvent) => {
 			evt.preventDefault();
 			const menu = new Menu();
@@ -219,10 +223,6 @@ export class ObsidianHomeView extends ItemView {
 		card.addEventListener("contextmenu", (evt) => openMenu(evt));
 
 		card.addEventListener("click", () => void this.leaf.openFile(file, { active: true }));
-
-		void loadPreview(this.plugin.app.vault, file, this.plugin.settings.previewLines).then((text) => {
-			if (text) previewEl.setText(text);
-		});
 	}
 
 	private getPinnedFiles(): TFile[] {

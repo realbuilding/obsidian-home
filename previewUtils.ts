@@ -1,9 +1,11 @@
 import { TFile, Vault, moment } from "obsidian";
+import { ENCRYPTED_EXTENSION } from "./types";
 
 const DATE_FORMATS = [moment.ISO_8601, "YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY/MM/DD HH:mm", "YYYY/MM/DD"];
 
 export async function loadPreview(vault: Vault, file: TFile, lines: number): Promise<string> {
 	if (lines <= 0) return "";
+	if (file.extension === ENCRYPTED_EXTENSION) return "🔒 已加密";
 	try {
 		const raw = await vault.cachedRead(file);
 		return extractPreview(raw, lines);

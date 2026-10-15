@@ -32,3 +32,6 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";
 export const EMPTY_VIEW_TYPE = "empty";
+
+// Encrypted notes (e.g. Meld Encrypt) can be pinned; their content is never read for previews.
+export const ENCRYPTED_EXTENSION = "mdenc";
