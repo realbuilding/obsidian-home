@@ -297,6 +297,30 @@
 	padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Mobile: the view adds its own side padding, so a 160px minimum leaves room for
+   only one pinned card per row; phones get a fixed three columns, tablets auto-fill. */
+.is-mobile .oh-grid-compact {
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.is-phone .oh-grid-compact {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.is-phone .oh-card-pinned {
+	padding: 10px;
+}
+
+/* Narrow phone cards: let the title wrap to two lines instead of truncating early. */
+.is-phone .oh-card-pinned .oh-card-title {
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	word-break: break-all;
+}
+
 .is-mobile .oh-root .oh-fab {
 	bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
