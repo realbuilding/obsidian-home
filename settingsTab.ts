@@ -33,7 +33,7 @@ class PathSuggest<T extends TAbstractFile> extends AbstractInputSuggest<T> {
 }
 
 interface PathListOptions<T extends TAbstractFile> {
-	key: "pinnedPaths" | "wanderFolders";
+	key: "pinnedPaths" | "wanderFolders" | "recentIncludeFolders" | "recentExcludeFolders";
 	name: string;
 	desc: string;
 	placeholder: string;
@@ -109,6 +109,26 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl).setName("最近文件范围").setHeading();
+
+		this.addPathList(containerEl, {
+			key: "recentIncludeFolders",
+			name: "只展示这些文件夹",
+			desc: "“最近文件”仅展示这些文件夹（含子文件夹）中的笔记，留空则展示全部",
+			placeholder: "输入文件夹名称搜索…",
+			emptyText: "未限制，展示全部文件夹",
+			getItems: () => this.getFolders(),
+		});
+
+		this.addPathList(containerEl, {
+			key: "recentExcludeFolders",
+			name: "不展示这些文件夹",
+			desc: "“最近文件”中隐藏这些文件夹（含子文件夹）中的笔记，优先于上方设置",
+			placeholder: "输入文件夹名称搜索…",
+			emptyText: "暂无排除的文件夹",
+			getItems: () => this.getFolders(),
+		});
+
 		new Setting(containerEl).setName("置顶笔记").setHeading();
 
 		this.addPathList(containerEl, {
@@ -153,8 +173,12 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 			desc: "从这些文件夹（含子文件夹）中随机抽取笔记",
 			placeholder: "输入文件夹名称搜索…",
 			emptyText: "暂未选择文件夹",
-			getItems: () => this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder),
+			getItems: () => this.getFolders(),
 		});
+	}
+
+	private getFolders(): TFolder[] {
+		return this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
 	}
 
 	// Search box that appends to a settings path list, followed by the list with remove buttons.

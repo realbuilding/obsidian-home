@@ -248,15 +248,20 @@ export class ObsidianHomeView extends ItemView {
 		const folders = this.plugin.settings.wanderFolders;
 		if (folders.length === 0) return [];
 		const excluded = new Set(exclude.map((f) => f.path));
-		const inFolder = (path: string) => folders.some((dir) => dir === "/" || path.startsWith(`${dir}/`));
-		return this.plugin.app.vault.getMarkdownFiles().filter((f) => !excluded.has(f.path) && inFolder(f.path));
+		return this.plugin.app.vault.getMarkdownFiles().filter((f) => !excluded.has(f.path) && isInFolders(f.path, folders));
 	}
 
 	private getRecentFiles(exclude: TFile[]): TFile[] {
+		const { recentIncludeFolders, recentExcludeFolders } = this.plugin.settings;
 		const excluded = new Set(exclude.map((f) => f.path));
 		return this.plugin.app.vault
 			.getMarkdownFiles()
-			.filter((f) => !excluded.has(f.path))
+			.filter(
+				(f) =>
+					!excluded.has(f.path) &&
+					(recentIncludeFolders.length === 0 || isInFolders(f.path, recentIncludeFolders)) &&
+					!isInFolders(f.path, recentExcludeFolders)
+			)
 			.map((file) => ({ file, time: this.getFileTime(file) }))
 			.sort((a, b) => b.time - a.time)
 			.slice(0, this.plugin.settings.limit)
@@ -301,4 +306,9 @@ export class ObsidianHomeView extends ItemView {
 		const file = await app.vault.create(candidate, "");
 		await this.leaf.openFile(file, { active: true });
 	}
+}
+
+// "/" denotes the vault root and matches every path.
+function isInFolders(path: string, folders: string[]): boolean {
+	return folders.some((dir) => dir === "/" || path.startsWith(`${dir}/`));
 }

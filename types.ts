@@ -5,6 +5,9 @@ export interface ObsidianHomeSettings {
 	limit: number;
 	previewLines: number;
 	pinnedPaths: string[];
+	// Recent files: empty include list means the whole vault; excludes apply afterwards.
+	recentIncludeFolders: string[];
+	recentExcludeFolders: string[];
 	openOnMobileStartup: boolean;
 	// Frontmatter properties that override file ctime/mtime; empty means use file stat.
 	createdProperty: string;
@@ -21,6 +24,8 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	limit: 20,
 	previewLines: 2,
 	pinnedPaths: [],
+	recentIncludeFolders: [],
+	recentExcludeFolders: [],
 	openOnMobileStartup: true,
 	createdProperty: "created",
 	updatedProperty: "updated",
