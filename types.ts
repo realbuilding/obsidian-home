@@ -17,6 +17,8 @@ export interface ObsidianHomeSettings {
 	wanderCount: number;
 	// Current wander picks; persisted so they only change on manual shuffle.
 	wanderPaths: string[];
+	// One-tap search terms shown in the new-note folder picker.
+	newNoteQuickTerms: string[];
 }
 
 export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
@@ -33,6 +35,7 @@ export const DEFAULT_SETTINGS: ObsidianHomeSettings = {
 	wanderFolders: [],
 	wanderCount: 2,
 	wanderPaths: [],
+	newNoteQuickTerms: [],
 };
 
 export const VIEW_TYPE_HOME = "obsidian-home-view";

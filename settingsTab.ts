@@ -32,8 +32,10 @@ class PathSuggest<T extends TAbstractFile> extends AbstractInputSuggest<T> {
 	}
 }
 
+type ListKey = "pinnedPaths" | "wanderFolders" | "recentIncludeFolders" | "recentExcludeFolders" | "newNoteQuickTerms";
+
 interface PathListOptions<T extends TAbstractFile> {
-	key: "pinnedPaths" | "wanderFolders" | "recentIncludeFolders" | "recentExcludeFolders";
+	key: Exclude<ListKey, "newNoteQuickTerms">;
 	name: string;
 	desc: string;
 	placeholder: string;
@@ -175,6 +177,10 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 			emptyText: "暂未选择文件夹",
 			getItems: () => this.getFolders(),
 		});
+
+		new Setting(containerEl).setName("新建笔记").setHeading();
+
+		this.addQuickTerms(containerEl);
 	}
 
 	private getFolders(): TFolder[] {
@@ -201,16 +207,49 @@ export class ObsidianHomeSettingTab extends PluginSettingTab {
 				});
 			});
 
-		if (settings[opts.key].length === 0) {
-			containerEl.createDiv({ cls: "setting-item-description", text: opts.emptyText });
+		this.renderList(containerEl, opts.key, opts.emptyText, update);
+	}
+
+	// Free-text terms shown as one-tap search shortcuts in the new-note folder picker.
+	private addQuickTerms(containerEl: HTMLElement) {
+		const settings = this.plugin.settings;
+		const update = async (terms: string[]) => {
+			settings.newNoteQuickTerms = terms;
+			await this.plugin.saveSettings();
+			this.display();
+		};
+		let draft = "";
+		const add = () => {
+			const term = draft.trim();
+			if (term && !settings.newNoteQuickTerms.includes(term)) void update([...settings.newNoteQuickTerms, term]);
+		};
+
+		new Setting(containerEl)
+			.setName("快速搜索词")
+			.setDesc("点击首页新建按钮后会弹出文件夹选择框，这些词显示在搜索框下方，点一下即填入搜索")
+			.addText((text) => {
+				text.setPlaceholder("如：work、日记").onChange((value) => (draft = value));
+				text.inputEl.addEventListener("keydown", (e) => {
+					if (e.key === "Enter") add();
+				});
+			})
+			.addButton((btn) => btn.setButtonText("添加").onClick(add));
+
+		this.renderList(containerEl, "newNoteQuickTerms", "暂无快速搜索词", update);
+	}
+
+	private renderList(containerEl: HTMLElement, key: ListKey, emptyText: string, update: (items: string[]) => Promise<void>) {
+		const items = this.plugin.settings[key];
+		if (items.length === 0) {
+			containerEl.createDiv({ cls: "setting-item-description", text: emptyText });
 		}
 
-		for (const path of settings[opts.key]) {
-			new Setting(containerEl).setName(path).addExtraButton((btn) =>
+		for (const item of items) {
+			new Setting(containerEl).setName(item).addExtraButton((btn) =>
 				btn
 					.setIcon("x")
 					.setTooltip("移除")
-					.onClick(() => void update(settings[opts.key].filter((p) => p !== path)))
+					.onClick(() => void update(items.filter((p) => p !== item)))
 			);
 		}
 	}

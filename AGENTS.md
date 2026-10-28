@@ -21,7 +21,7 @@ ObsidianHome 是一个 Obsidian 插件，用卡片式主页**完全替换**新�
 - 置顶笔记（设置页搜索添加，或卡片菜单中置顶/取消置顶）
 - 最近文件，按创建时间或修改时间排序，数量与预览行数可配置
 - 卡片展示标题、正文预览、时间戳与所在文件夹
-- 右下角悬浮按钮新建笔记，遵循 Obsidian「新建文件默认位置」设置
+- 右下角悬浮按钮新建笔记，先弹窗搜索选择目标文件夹，支持在设置中添加快速搜索词
 - 桌面端与移动端通用
 
 ## 目录结构
@@ -30,6 +30,7 @@ ObsidianHome 是一个 Obsidian 插件，用卡片式主页**完全替换**新�
 |---|---|
 | `main.ts` | 插件生命周期；把内置 `"empty"` 视图转换为 `obsidian-home-view`；vault 事件防抖刷新 |
 | `homeView.ts` | `ItemView` 实现：排序切换、卡片渲染、右键菜单、新建笔记 |
+| `folderPicker.ts` | 新建笔记前的文件夹选择弹窗（`FuzzySuggestModal`），含快速搜索词 |
 | `settingsTab.ts` | 设置面板与置顶笔记搜索（`AbstractInputSuggest`） |
 | `previewUtils.ts` | 正文预览提取与时间格式化（纯函数为主） |
 | `syncStatus.ts` | 读取 Nutstore Sync 插件的最近同步时间（非公开 API，防御式访问，存设备本地） |

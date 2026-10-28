@@ -329,3 +329,19 @@
 body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
 	visibility: hidden;
 }
+
+/* New-note folder picker: quick search terms */
+.oh-quick-terms {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.oh-quick-terms .oh-quick-term {
+	font-size: var(--font-ui-small);
+	padding: var(--size-2-1) var(--size-4-3);
+	border-radius: var(--radius-l);
+	height: auto;
+}

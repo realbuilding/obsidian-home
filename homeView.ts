@@ -1,4 +1,5 @@
-import { ItemView, Menu, TFile, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, Menu, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
+import { FolderPickerModal } from "./folderPicker";
 import type ObsidianHomePlugin from "./main";
 import { VIEW_TYPE_HOME } from "./types";
 import { formatTime, loadPreview, parseDateProperty, parseRating } from "./previewUtils";
@@ -79,7 +80,7 @@ export class ObsidianHomeView extends ItemView {
 
 		const fab = container.createEl("button", { cls: "oh-fab", attr: { "aria-label": "新建笔记" } });
 		setIcon(fab, "plus");
-		fab.addEventListener("click", () => void this.createNote());
+		fab.addEventListener("click", () => this.pickFolderAndCreateNote());
 	}
 
 	private renderHeader(container: HTMLElement) {
@@ -290,11 +291,14 @@ export class ObsidianHomeView extends ItemView {
 		this.plugin.refreshAllHomeViews();
 	}
 
-	private async createNote() {
+	private pickFolderAndCreateNote() {
+		new FolderPickerModal(this.app, this.plugin.settings.newNoteQuickTerms, (folder) => void this.createNote(folder)).open();
+	}
+
+	private async createNote(folder: TFolder) {
 		const { app } = this.plugin;
-		const folder = app.fileManager.getNewFileParent("");
 		const base = "未命名";
-		const prefix = folder.path && folder.path !== "/" ? `${folder.path}/` : "";
+		const prefix = folder.isRoot() ? "" : `${folder.path}/`;
 
 		let candidate = `${prefix}${base}.md`;
 		let n = 1;
