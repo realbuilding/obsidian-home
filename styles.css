@@ -340,6 +340,8 @@ body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
 }
 
 .oh-quick-terms .oh-quick-term {
+	background-color: var(--interactive-normal);
+	color: var(--text-normal);
 	font-size: var(--font-ui-small);
 	padding: var(--size-2-1) var(--size-4-3);
 	border-radius: var(--radius-l);
@@ -408,4 +410,18 @@ body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
 
 .oh-folder-picker.oh-picker-idle .oh-quick-terms {
 	border-bottom: none;
+}
+
+/* Phone prompts are a near full-height sheet with the input at the bottom:
+   keep quick terms right above the input, and shrink to a bottom sheet while idle. */
+.is-phone .oh-folder-picker .oh-quick-terms {
+	order: 2;
+	border-bottom: none;
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+.is-phone .prompt.oh-folder-picker.oh-picker-idle {
+	top: auto;
+	bottom: 0;
+	height: auto;
 }
