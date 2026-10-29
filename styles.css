@@ -400,3 +400,12 @@ body.oh-booting .workspace-split.mod-root .workspace-leaf-content {
 .oh-setting-number {
 	width: 5em;
 }
+
+.oh-folder-picker.oh-picker-idle .prompt-results,
+.oh-folder-picker.oh-picker-idle .prompt-instructions {
+	display: none;
+}
+
+.oh-folder-picker.oh-picker-idle .oh-quick-terms {
+	border-bottom: none;
+}

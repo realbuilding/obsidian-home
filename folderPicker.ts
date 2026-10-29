@@ -1,4 +1,4 @@
-import { App, FuzzySuggestModal, TFolder } from "obsidian";
+import { App, FuzzyMatch, FuzzySuggestModal, Platform, TFolder } from "obsidian";
 
 // Folder picker shown before creating a note; quick terms are one-tap search shortcuts.
 export class FolderPickerModal extends FuzzySuggestModal<TFolder> {
@@ -9,7 +9,9 @@ export class FolderPickerModal extends FuzzySuggestModal<TFolder> {
 		super(app);
 		this.quickTerms = quickTerms;
 		this.onChoose = onChoose;
-		this.setPlaceholder("选择新笔记所在文件夹…");
+		this.setPlaceholder("搜索新笔记所在文件夹…");
+		this.emptyStateText = "没有匹配的文件夹";
+		this.modalEl.addClass("oh-folder-picker");
 		this.setInstructions([
 			{ command: "↵", purpose: "在此文件夹新建" },
 			{ command: "esc", purpose: "取消" },
@@ -18,6 +20,8 @@ export class FolderPickerModal extends FuzzySuggestModal<TFolder> {
 
 	onOpen() {
 		super.onOpen();
+		// On mobile, quick terms are the main entry; don't pop the keyboard until the input is tapped.
+		if (Platform.isMobile) window.setTimeout(() => this.inputEl.blur(), 0);
 		if (this.quickTerms.length === 0) return;
 		const bar = createDiv({ cls: "oh-quick-terms" });
 		this.resultContainerEl.before(bar);
@@ -25,14 +29,21 @@ export class FolderPickerModal extends FuzzySuggestModal<TFolder> {
 			bar.createEl("button", { cls: "oh-quick-term", text: term }).addEventListener("click", () => {
 				this.inputEl.value = term;
 				this.inputEl.dispatchEvent(new Event("input"));
-				this.inputEl.focus();
+				if (!Platform.isMobile) this.inputEl.focus();
 			});
 		}
 	}
 
+	// Listing every folder is useless in a large vault, so results stay hidden until there is a query.
+	getSuggestions(query: string): FuzzyMatch<TFolder>[] {
+		const idle = query.trim() === "";
+		this.modalEl.toggleClass("oh-picker-idle", idle);
+		return idle ? [] : super.getSuggestions(query);
+	}
+
 	getItems(): TFolder[] {
 		const folders = this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
-		// Root first, then alphabetical so the empty-query list is predictable.
+		// Root first, then alphabetical so equal-score matches are ordered predictably.
 		return folders.sort((a, b) => (a.isRoot() ? -1 : b.isRoot() ? 1 : a.path.localeCompare(b.path)));
 	}
 
